@@ -564,5 +564,4 @@ void adjustDimensions(float x , float y , float grid , float & newx , float newy
 	newx = x + diffx;
 	cout << "newx:" << newx << endl;
 
-	system("pause");
 }
