@@ -23,7 +23,7 @@ int route = -10;
 int s_value, t_value;
 
 //function declarations
-bool input(coord &source, coord &target, int x, int y); //takes in the input coordinates and validates input
+bool input(coord &source, vector <coord> &targets, int x, int y); //takes in the input coordinates and validates input
 void printMatrix (vector<vector<int>> m, int x, int y); //print a matrix
 coord traverse(vector <vector<int>> &l,  int x, int y, coord s, coord t, bool isSource); //DFS part
 bool flood(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target, int via, int count0, bool isSource); //BFS part
@@ -32,73 +32,121 @@ void backToLife(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<
 void undoTraversal(vector<vector<int>> &l, int x, int y, coord s, coord t); //remove route of traversal if no path is found
 bool classicalImplementation(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, coord target, int via, bool swapCoord, bool floodLessB); //full implementation
 coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target); //DFS until flooding is needed
-void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via);
+void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via, bool swapCoord, bool floodLessB);
 void getDistance(coord source, vector<coord> targets, vector<pair<int,int>> &targetsDist);
 void getCoords(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, int route, vector<coord> &coords);
 
 //main
 int main(){
-
-    int x = 11;
-    int y = 13;
-    int via = 10;
-    coord source;
-    source.x = 7;
-    source.y = 1;
-    source.z = 1;
-    vector <coord> target;
-    coord target1;
+    int x, y; //coordinates of grid
     
-    target1.x = 9;
-    target1.y = 7;
-    target1.z = 3;
-    target.push_back(target1);
+    //getting the input dimensions
+    int via; //via cost
+    bool swapCoord; //swap source and target when no path is found
+    bool floodLessB; //DFS until flooding is needed
     
-    target1.x = 7;
-    target1.y = 7;
-    target1.z = 3;
-    target.push_back(target1);
+    cout << "Please enter cost of via\n";
+    cin >> via;
+    cout << "Please enter the x-dimension of the plane\n";
+    cin >> x;
+    cout << "Please enter the y-dimension of the plane\n";
+    cin >> y;
     
-    target1.x = 4;
-    target1.y = 4;
-    target1.z = 1;
-    target.push_back(target1);
+    cout << "\nIf no path available, do you want to swap source and target and try again?\nIf yes enter 1, if no enter 0" << endl;
+    cin >> swapCoord;
     
-    target1.x = 5;
-    target1.y = 3;
-    target1.z = 2;
-    target.push_back(target1);
+    cout << "\nDo you want to do DFS in more than one layer and thus flood less?\nIf yes enter 1, if no enter 0" << endl;
+    cin >> floodLessB;
     
-    target1.x = 10;
-    target1.y = 12;
-    target1.z = 3;
-    target.push_back(target1);
-    
-//    target.push_back(target2);
-//    target.push_back(target3);
-
     //initializations
     vector <int> rows(y);
     vector <vector <int>> l1(x,rows); //layer 1
     vector <vector <int>> l2(x,rows); //layer 2
     vector <vector <int>> l3(x,rows); //layer 3
-
+    
     for (int i = 0; i<x; i++){
         for (int j = 0; j<y; j++){
             l1[i][j] = 0;
         }
     }
-
+    
     l2 = l1;
     l3 = l1;
+    
+    coord source;
+    vector <coord> targets;
+    source.x = source.y;
+    source.z = 1;
+    
+    while (source.x >= 0 && source.y >= 0 && source.z > 0){
+        if (!input(source, targets, x, y))
+            return 0;
+        if (source.x >= 0 && source.y >= 0 && source.z > 0){
+            multiPins(l1, l2, l3, x, y, source, targets, via, swapCoord, floodLessB);
+        }
+        route--;
+    }
 
-    multiPins(l1, l2, l3, x, y, source, target, via);
+//    int x = 11;
+//    int y = 13;
+//    int via = 10;
+//    coord source;
+//    source.x = 7;
+//    source.y = 1;
+//    source.z = 1;
+//    vector <coord> target;
+//    coord target1;
+//
+//    target1.x = 9;
+//    target1.y = 7;
+//    target1.z = 3;
+//    target.push_back(target1);
+//
+//    target1.x = 7;
+//    target1.y = 7;
+//    target1.z = 3;
+//    target.push_back(target1);
+//
+//    target1.x = 4;
+//    target1.y = 4;
+//    target1.z = 1;
+//    target.push_back(target1);
+//
+//    target1.x = 5;
+//    target1.y = 3;
+//    target1.z = 2;
+//    target.push_back(target1);
+//
+//    target1.x = 10;
+//    target1.y = 12;
+//    target1.z = 3;
+//    target.push_back(target1);
+//
+////    target.push_back(target2);
+////    target.push_back(target3);
+//
+//    //initializations
+//    vector <int> rows(y);
+//    vector <vector <int>> l1(x,rows); //layer 1
+//    vector <vector <int>> l2(x,rows); //layer 2
+//    vector <vector <int>> l3(x,rows); //layer 3
+//
+//    for (int i = 0; i<x; i++){
+//        for (int j = 0; j<y; j++){
+//            l1[i][j] = 0;
+//        }
+//    }
+//
+//    l2 = l1;
+//    l3 = l1;
+//
+//    multiPins(l1, l2, l3, x, y, source, target, via);
 
         return 0;
 }
 
 //function definitions
-bool input(coord &source, coord &target, int x, int y){
+bool input(coord &source, vector <coord> &targets, int x, int y){
     do{
         cout << "\nEnter x coordinate of source\n";
         cin >> source.x;
@@ -120,32 +168,45 @@ bool input(coord &source, coord &target, int x, int y){
         cin >> source.z;
     } while((source.z > 0) && (source.z != 1) && (source.z != 2) && (source.z != 3));
     
-    if(source.z < 0 )
+    if(source.z <= 0 )
+        return false;
+    targets.erase(targets.begin(), targets.end());
+    coord target;
+    int n;
+    cout << "Number of target pins\n";
+    cin>> n;
+    if (n<=0)
         return false;
     
-    do{
-        cout << "Enter x coordinate of target\n";
-        cin >> target.x;
-    } while((target.x >= 0) && (target.x >= x));
-    
-    if(target.x < 0 )
-        return false;
-    
-    do {
-        cout << "Enter y coordinate of target\n";
-        cin >> target.y;
-    } while ((target.y >= 0) && (target.y >= y));
-    
-    if(target.y < 0 )
-        return false;
-    
-    do {
-        cout << "Enter z coordinate of target\n";
-        cin >> target.z;
-    } while((target.z > 0) && (target.z != 1) && (target.z != 2) && (target.z != 3));
-    
-    if(target.z < 0 )
-        return false;
+    while (n>0){
+        do{
+            cout << "Enter x coordinate of target\n";
+            cin >> target.x;
+        } while((target.x >= 0) && (target.x >= x));
+        
+        if(target.x < 0 )
+            return false;
+        
+        do {
+            cout << "Enter y coordinate of target\n";
+            cin >> target.y;
+        } while ((target.y >= 0) && (target.y >= y));
+        
+        if(target.y < 0 )
+            return false;
+        
+        do {
+            cout << "Enter z coordinate of target\n";
+            cin >> target.z;
+        } while((target.z > 0) && (target.z != 1) && (target.z != 2) && (target.z != 3));
+        
+        if(target.z <= 0)
+            return false;
+        
+        targets.push_back(target);
+        
+        n--;
+    }
     return true;
 }
 
@@ -782,12 +843,17 @@ coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<
     return newSource1;
 }
 
-void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via){
+void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via, bool swapCoord, bool floodLessB){
     int routeNo = route;
     int i = 0;
-    while(!classicalImplementation(l1, l2, l3, x, y, source, target[0], via, 0, 1))
+    while(!classicalImplementation(l1, l2, l3, x, y, source, target[0], via, swapCoord, floodLessB))
     {
+        route--;
         coord temp = target[0];
+        if (i >= (target.size()-1)){
+            cout << "No route\n";
+            return;
+        }
         target[0] = target[i+1];
         target[i+1] = temp;
         i++;
@@ -803,8 +869,14 @@ void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<i
             cout << targetsDist[i].first << "\t\t" << coords[targetsDist[i].second].x << " " << coords[targetsDist[i].second].y << " " << coords[targetsDist[i].second].z <<endl;
         }
         int j = 0;
-        while( !classicalImplementation(l1, l2, l3, x, y, targetPin, coords[targetsDist[j].second], via, 0, 1))
+        while(!classicalImplementation(l1, l2, l3, x, y, targetPin, coords[targetsDist[j].second], via, swapCoord, floodLessB)){
             j++;
+            route--;
+            if (j>(targetsDist.size()-1)){
+                cout << "No route\n";
+                return;
+            }
+        }
     }
 
 }
