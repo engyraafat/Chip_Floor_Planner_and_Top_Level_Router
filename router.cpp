@@ -1,68 +1,73 @@
-//macros
-#define m1 -1 //metal 1
-#define m2 -2 //metal 2
-#define m3 -3 //metal 3
-#define v12 -4 //via m1-m2
-#define v23 -5 //via m2-m3
-#define v123 -6 //via m1-m2-m3
-
 //includes
 #include <iostream>
 #include <vector>
 #include <math.h>
 #include <time.h>
+#include <map>
 using namespace std;
 
 //structs
+struct layer{vector<vector<int>> l; int dir; int num; float pitch; int ratio; };
 struct coord{int x; int y; int z;};
+struct layerDir{int direction; float pitch;};
 
 //global variables
 int cells = 0;
-int vias;
+int vias = 0;
 int route = -10;
 int s_value, t_value;
 
 //function declarations
-bool input(coord &source, vector <coord> &targets, int x, int y); //takes in the input coordinates and validates input
-void printMatrix (vector<vector<int>> m, int x, int y); //print a matrix
-coord traverse(vector <vector<int>> &l,  int x, int y, coord s, coord t, bool isSource); //DFS part
-bool flood(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target, int via, int count0, bool isSource); //BFS part
-bool backTracking(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, coord target, int via, coord source1); //To generate route
-void backToLife(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y); //Erase flooding after route is complete
-void undoTraversal(vector<vector<int>> &l, int x, int y, coord s, coord t); //remove route of traversal if no path is found
-bool classicalImplementation(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, coord target, int via, bool swapCoord, bool floodLessB); //full implementation
-coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target); //DFS until flooding is needed
-void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via, bool swapCoord, bool floodLessB);
-void getDistance(coord source, vector<coord> targets, vector<pair<int,int>> &targetsDist);
-void getCoords(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, int route, vector<coord> &coords);
+void printMatrices(vector <layer> &manyLayers, int x, int y, int m);
+bool input(vector <coord> &pins, int x, int y, int m);
+coord traverse(vector <vector<int>> &l, int dir, int x, int y, int m, coord s, coord t, bool isSource);
+bool backTracking(vector<layer> &manyLayers, int x, int y, int m, coord source, coord target, int via, coord source1);
+void backToLife(vector<layer> &manyLayers, int x, int y, int m);
+bool flood(vector<layer> &manyLayers, int x, int y, int m, coord newSource, coord target, int via, int count0, bool isSource);
+bool classicalImplementation(vector<layer> &manyLayers, int x, int y, int m, coord source, coord target, int via, bool floodLessB);
+void undoTraversal(vector<vector<int>> &l, int dir, int x, int y, coord s, coord t);
+coord floodLess(vector<layer> &manyLayers, int x, int y, int m, coord newSource, coord target);
+void multiPins(vector<layer> &manyLayers, int x, int y, int m, vector<coord> target, int via, bool floodLessB);
+void getDistance(int dir, coord source, vector<coord> targets, vector<pair<int,int>> &targetsDist);
+void getCoords(vector<layer> &manyLayers, int x, int y, int m, int route, vector<coord> &coords);
+int countCells(vector<layer> manyLayers, int x, int y, int m);
+void computeRatio(vector<layer> &manyLayers);
 
 //main
 int main(){
-    int x, y; //coordinates of grid
+    int x, y, m; //coordinates of grid
     
-    //getting the input dimensions
+    map<int, int> layerDirection; //map of metal index and metal direction
+    map<int, float> layerPitch; //map of metal index and metal pitch
+    
     int via; //via cost
-    bool swapCoord; //swap source and target when no path is found
     bool floodLessB; //DFS until flooding is needed
     
     cout << "Please enter cost of via\n";
     cin >> via;
-    cout << "Please enter the x-dimension of the plane\n";
+    
+    cout << "\nPlease enter the x-dimension of the plane\n";
     cin >> x;
     cout << "Please enter the y-dimension of the plane\n";
     cin >> y;
+    cout << "How many metal layers are there?\n";
+    cin >> m;
     
-    cout << "\nIf no path available, do you want to swap source and target and try again?\nIf yes enter 1, if no enter 0" << endl;
-    cin >> swapCoord;
+    //1: horizontal, 0: vertical
+    for (int i=0; i<m; i++){
+        layerDirection[i] = (i+1) % 2;
+        layerPitch[i] = 0.6;
+//        if (i==0)
+//            layerPitch[i] = 0.6;
+//        else
+//            layerPitch[i] =  0.6 * (i);
+    }
     
-    cout << "\nDo you want to do DFS in more than one layer and thus flood less?\nIf yes enter 1, if no enter 0" << endl;
-    cin >> floodLessB;
+    vector<layer> manyLayers;
     
     //initializations
     vector <int> rows(y);
     vector <vector <int>> l1(x,rows); //layer 1
-    vector <vector <int>> l2(x,rows); //layer 2
-    vector <vector <int>> l3(x,rows); //layer 3
     
     for (int i = 0; i<x; i++){
         for (int j = 0; j<y; j++){
@@ -70,176 +75,146 @@ int main(){
         }
     }
     
-    l2 = l1;
-    l3 = l1;
+    for (int i=0; i<m; i++){
+        layer tempL;
+        vector<vector<int>> temp = l1;
+        tempL.l = temp;
+        tempL.num = i;
+        tempL.pitch = layerPitch[i];
+        tempL.dir = layerDirection[i]; //1: horizontal, 0: vertical
+        manyLayers.push_back(tempL);
+    }
+    computeRatio(manyLayers);
     
-    coord source;
-    vector <coord> targets;
-    source.x = source.y;
-    source.z = 1;
-    
-    while (source.x >= 0 && source.y >= 0 && source.z > 0){
-        if (!input(source, targets, x, y))
+    cout << "\nDo you want to do DFS in more than one layer and thus flood less?\nIf yes enter 1, if no enter 0" << endl;
+    cin >> floodLessB;
+
+    vector <coord> pins;
+
+    while (true){
+        pins.erase(pins.begin(), pins.end());
+        if (!input(pins, x, y, m))
             return 0;
-        if (source.x >= 0 && source.y >= 0 && source.z > 0){
-            multiPins(l1, l2, l3, x, y, source, targets, via, swapCoord, floodLessB);
-        }
+        //function to route
+        multiPins(manyLayers, x, y, m, pins, via, floodLessB);
         route--;
+        cells = 0;
+        vias = 0;
     }
 
-//    int x = 11;
-//    int y = 13;
-//    int via = 10;
-//    coord source;
-//    source.x = 7;
-//    source.y = 1;
-//    source.z = 1;
-//    vector <coord> target;
-//    coord target1;
-//
-//    target1.x = 9;
-//    target1.y = 7;
-//    target1.z = 3;
-//    target.push_back(target1);
-//
-//    target1.x = 7;
-//    target1.y = 7;
-//    target1.z = 3;
-//    target.push_back(target1);
-//
-//    target1.x = 4;
-//    target1.y = 4;
-//    target1.z = 1;
-//    target.push_back(target1);
-//
-//    target1.x = 5;
-//    target1.y = 3;
-//    target1.z = 2;
-//    target.push_back(target1);
-//
-//    target1.x = 10;
-//    target1.y = 12;
-//    target1.z = 3;
-//    target.push_back(target1);
-//
-////    target.push_back(target2);
-////    target.push_back(target3);
-//
-//    //initializations
-//    vector <int> rows(y);
-//    vector <vector <int>> l1(x,rows); //layer 1
-//    vector <vector <int>> l2(x,rows); //layer 2
-//    vector <vector <int>> l3(x,rows); //layer 3
-//
-//    for (int i = 0; i<x; i++){
-//        for (int j = 0; j<y; j++){
-//            l1[i][j] = 0;
-//        }
-//    }
-//
-//    l2 = l1;
-//    l3 = l1;
-//
-//    multiPins(l1, l2, l3, x, y, source, target, via);
-
-        return 0;
+    
+    return 0;
 }
 
 //function definitions
-bool input(coord &source, vector <coord> &targets, int x, int y){
-    do{
-        cout << "\nEnter x coordinate of source\n";
-        cin >> source.x;
-    } while((source.x >= 0) && (source.x >= x));
-    
-    if(source.x < 0 )
-        return false;
-    
-    do {
-        cout << "Enter y coordinate of source\n";
-        cin >> source.y;
-    } while ((source.y >= 0) && (source.y >= y));
-    
-    if(source.y < 0 )
-        return false;
-    
-    do {
-        cout << "Enter z coordinate of source\n";
-        cin >> source.z;
-    } while((source.z > 0) && (source.z != 1) && (source.z != 2) && (source.z != 3));
-    
-    if(source.z <= 0 )
-        return false;
-    targets.erase(targets.begin(), targets.end());
-    coord target;
+void printMatrices(vector <layer> &manyLayers, int x, int y, int m){
+    for(int z = 0; z< m; z++){
+        cout << "\nMetal Layer: " << z << ", Direction: ";
+        if (manyLayers[z].dir == 1)
+            cout << "horizontal";
+        else if (manyLayers[z].dir == 0)
+            cout << "vertical";
+        cout << " Pitch: " << manyLayers[z].pitch;
+        cout << " Ratio: " << manyLayers[z].ratio << endl;
+        for (int i = 0; i<x; i++){
+            for (int j = 0; j<y; j++){
+                cout << manyLayers[z].l[i][j] << "\t";
+            }
+            cout << endl;
+        }
+        cout << endl << endl << endl;
+    }
+}
+bool input(vector <coord> &pins, int x, int y, int m){
+    coord pin;
     int n;
-    cout << "Number of target pins\n";
-    cin>> n;
+    do {
+        cout << "Number of pins to connect in this net\n";
+        cin>> n;
+    }   while(n == 1);
     if (n<=0)
         return false;
     
     while (n>0){
         do{
             cout << "Enter x coordinate of target\n";
-            cin >> target.x;
-        } while((target.x >= 0) && (target.x >= x));
+            cin >> pin.x;
+        } while((pin.x < 0) || (pin.x >= x));
         
-        if(target.x < 0 )
-            return false;
         
         do {
             cout << "Enter y coordinate of target\n";
-            cin >> target.y;
-        } while ((target.y >= 0) && (target.y >= y));
+            cin >> pin.y;
+        } while ((pin.y < 0) || (pin.y >= y));
         
-        if(target.y < 0 )
-            return false;
         
         do {
             cout << "Enter z coordinate of target\n";
-            cin >> target.z;
-        } while((target.z > 0) && (target.z != 1) && (target.z != 2) && (target.z != 3));
+            cin >> pin.z;
+        } while((pin.z < 0) || (pin.z >= m));
         
-        if(target.z <= 0)
-            return false;
-        
-        targets.push_back(target);
+        pins.push_back(pin);
         
         n--;
     }
     return true;
 }
-
-void printMatrix (vector<vector<int>> m, int x, int y){
-    for (int i = 0; i<x; i++){
-        for (int j = 0; j<y; j++){
-            cout <<m[i][j] << "\t";
-        }
-        cout << endl;
-    }
-}
-
-coord traverse(vector <vector<int>> &l, int x, int y, coord s, coord t, bool isSource){
+coord traverse(vector <vector<int>> &l, int dir, int ratio, int x, int y, coord s, coord t, bool isSource){
     //vertical
     coord newSource;
-    if (s.z  == 2){ //vertical
-        if (isSource) //is s == initial source
-            l[s.x][s.y] = route;
+    if(dir == 0){ // vertical
+        s.y -= (s.y % ratio);
+        t.y -= (t.y % ratio);
+    }
+    else {
+        s.x -= (s.x % ratio);
+        t.x -= (t.x % ratio);
+    }
+    if (dir  == 0){ //vertical
+        if (isSource){ //is s == initial source
+            int j = s.y;
+            if(s.y % ratio == 0){
+                int index = 0;
+                while(index < ratio && j+index<y){
+                    l[s.x][j+index] = route;
+                    index++;
+                }
+            }
+        }
         else if ((s.x == t.x) && (s.y == t.y) && (s.z == t.z)){ //s is target
-            l[s.x][s.y] = route;
-            cells++;
+            int j = s.y;
+            if(s.y % ratio == 0){
+                int index = 0;
+                while(index < ratio && j+index<y){
+                    l[s.x][j+index] = route;
+                    index++;
+                }
+            }
             return t;
         }
-        else if (l[s.x][s.y] == 0)
-            l[s.x][s.y] = route;
+        else if (l[s.x][s.y] == 0){
+            int j = s.y;
+            if(s.y % ratio == 0){
+                int index = 0;
+                while(index < ratio && j+index<y){
+                    l[s.x][j+index] = route;
+                    index++;
+                }
+            }
+        }
         else //is s is not initial source and it is visited
             return s;
-        cells ++; //increment cells (to account for s)
         if (t.x > s.x){
             for (int i = s.x + 1; i<=t.x; i++){ //iterate vertically from source to target
                 if (l[i][s.y] == 0){ //if cell is empty
-                    l[i][s.y] = route; //visit cell
-                    cells ++;
+                    int j = s.y;
+                    if(s.y % ratio == 0){
+                        int index = 0;
+                        while(index < ratio && j+index<y){
+                            l[i][j+index] = route;
+                            index++;
+                        }
+                    }
                 }
                 else{ //else return
                     newSource.x = i-1;
@@ -252,8 +227,14 @@ coord traverse(vector <vector<int>> &l, int x, int y, coord s, coord t, bool isS
         else {
             for (int i = s.x - 1; i >= t.x; i--){ //iterate vertically from source to target
                 if (l[i][s.y] == 0){ //if cell is empty
-                    l[i][s.y] = route; //visit cell
-                    cells ++;
+                    int j = s.y;
+                    if(s.y % ratio == 0){
+                        int index = 0;
+                        while(index < ratio && j+index<y){
+                            l[i][j+index] = route;
+                            index++;
+                        }
+                    }
                 }
                 else{ //else return
                     newSource.x = i+1;
@@ -269,23 +250,54 @@ coord traverse(vector <vector<int>> &l, int x, int y, coord s, coord t, bool isS
     }
     //horizontal
     else{
-        if (isSource) //is s == initial source
-            l[s.x][s.y] = route;
+        if (isSource){ //is s == initial source
+//            l[s.x][s.y] = route;
+            int i = s.x;
+            if(i % ratio == 0){
+                int index = 0;
+                while(index < ratio && i+index<x){
+                    l[i+index][s.y] = route;
+                    index++;
+                }
+            }
+        }
         else if ((s.x == t.x) && (s.y == t.y) && (s.z == t.z)){ //s is target
-            l[s.x][s.y] = route;
-            cells++;
+//            l[s.x][s.y] = route;
+            int i = s.x;
+            if(i % ratio == 0){
+                int index = 0;
+                while(index < ratio && i+index<x){
+                    l[i+index][s.y] = route;
+                    index++;
+                }
+            }
             return t;
         }
-        else if (l[s.x][s.y] == 0)
-            l[s.x][s.y] = route;
+        else if (l[s.x][s.y] == 0){
+//            l[s.x][s.y] = route;
+            int i = s.x;
+            if(i % ratio == 0){
+                int index = 0;
+                while(index < ratio && i+index<x){
+                    l[i+index][s.y] = route;
+                    index++;
+                }
+            }
+        }
         else
             return s; //is s is not initial source and it is visited
-        cells++; //increment cells (to account for s)
         if (t.y > s.y){
             for (int j = s.y + 1; j <= t.y; j++){ //iterate horizontally from source to target
                 if (l[s.x][j] == 0){ //if cell is empty
-                    l[s.x][j] = route; //visit cell
-                    cells++;
+//                    l[s.x][j] = route; //visit cell
+                    int i = s.x;
+                    if(i % ratio == 0){
+                        int index = 0;
+                        while(index < ratio && i+index<x){
+                            l[i+index][j] = route;
+                            index++;
+                        }
+                    }
                 }
                 else{ //else return
                     newSource.x = s.x;
@@ -298,8 +310,15 @@ coord traverse(vector <vector<int>> &l, int x, int y, coord s, coord t, bool isS
         else {
             for (int j = s.y - 1; j >= t.y; j--){ //iterate horizontally from source to target
                 if (l[s.x][j] == 0){ //if cell is empty
-                    l[s.x][j] = route; //visit cell
-                    cells++;
+//                    l[s.x][j] = route; //visit cell
+                    int i = s.x;
+                    if(i % ratio == 0){
+                        int index = 0;
+                        while(index < ratio && i+index<x){
+                            l[i+index][j] = route;
+                            index++;
+                        }
+                    }
                 }
                 else{ //else return
                     newSource.x = s.x;
@@ -316,440 +335,482 @@ coord traverse(vector <vector<int>> &l, int x, int y, coord s, coord t, bool isS
     }
     return newSource;
 }
-
-bool flood(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target, int via, int count0, bool isSource){
+bool flood(vector<layer> &manyLayers, int x, int y, int m, coord newSource, coord target, int via, int count0, bool isSource){
     int count = count0; //initial count
-    switch(newSource.z){
-        case (1):{
-            if (isSource) //if newSource is the initial source
-                l1[newSource.x][newSource.y] = count; //set cell to initial count (even if it is not empty)
-            else if (l1[newSource.x][newSource.y] == 0 || l1[newSource.x][newSource.y] == route) //else then cell must be empty
-                l1[newSource.x][newSource.y] = count;
-            else
-                return false; //else there is no path
-        }
-            break;
-        case (2):{
-            if (isSource) //if newSource is the initial source
-                l2[newSource.x][newSource.y] = count; //set cell to initial count (even if it is not empty)
-            else if (l2[newSource.x][newSource.y] == 0 || l2[newSource.x][newSource.y] == route) //else then cell must be empty
-                l2[newSource.x][newSource.y] = count;
-            else
-                return false; //else there is no path
-        }
-            break;
-        case (3):{
-            if (isSource) //if newSource is the initial source
-                l3[newSource.x][newSource.y] = count; //set cell to initial count (even if it is not empty)
-            else if (l3[newSource.x][newSource.y] == 0 || l3[newSource.x][newSource.y] == route) //else then cell must be empty
-                l3[newSource.x][newSource.y] = count;
-            else
-                return false; //else there is no path
-        }
-            break;
-    }
+    
+    if(manyLayers[newSource.z].dir == 0) // vertical
+        newSource.y -= (newSource.y % manyLayers[newSource.z].ratio);
+    else
+        newSource.x -= (newSource.x % manyLayers[newSource.z].ratio);
+    
+    if(manyLayers[target.z].dir == 0) // vertical
+        target.y -= (target.y % manyLayers[target.z].ratio);
+    else
+        target.x -= (target.x % manyLayers[target.z].ratio);
+    
+    if (isSource)
+        manyLayers[newSource.z].l[newSource.x][newSource.y] = count;
+    else if (manyLayers[newSource.z].l[newSource.x][newSource.y] == 0 ||  manyLayers[newSource.z].l[newSource.x][newSource.y] == route)
+        manyLayers[newSource.z].l[newSource.x][newSource.y] = count;
+    else
+        return false;
+    
     //for optimization (not implemented)
     int imin, imax, jmin, jmax;
     imin = imax = newSource.x;
     jmin = jmax = newSource.y;
     
-    while(count < x * y * via){
-        //                for (int i= imin; i<= imax; i++){
-        //                    for (int j = jmin; j <= jmax; j++){
-        
-        //     while (count < (x+y+2*via)){ //maximum count
-        for (int i = 0; i<= imax; i++){
-            for (int j = 0; j<= jmax; j++){
-                if (l1[i][j] == count){ //check if cell in l1 == count
-                    
-                    if((i == target.x) && (j == target.y) && (target.z == 2)){ //check is cell above is target
-                        l2[i][j] = count + via;
-                        return true; //path found
-                    }
-                    if(l2[i][j] == 0){ //check if cell above is empty
-                        l2[i][j] = count + via;
-                    }
-                    
-                    if((i == target.x) && ((j+1) == target.y) && (target.z == 1)){ //check if cell to the right is target
-                        l1[i][j+1] = count+1;
-                        jmax = j+1;
-                        return true; //path found
-                    }
-                    if((j+1<y) && (l1[i][j+1] == 0)){ //check if cell to the right is empty
-                        jmax = j+1;
-                        //                                i= imin;
-                        l1[i][j+1] = count+1;
-                    }
-                    
-                    if((i == target.x) && ((j-1) == target.y) && (target.z == 1)){ //check if cell to the left is target
-                        l1[i][j-1] = count+1;
-                        jmin = j-1;
-                        return true; //path found
-                    }
-                    if((j-1>=0) && (l1[i][j-1] == 0)){  //check if cell to the left is empty
-                        jmin = j-1;
-                        //                                i = imin;
-                        //                                j = jmin;
-                        l1[i][j-1] = count+1;
-                    }
-                }
-                
-                
-                if (l2[i][j] == count){  //check if cell in l2 == count
-                    
-                    if((j == target.y) && (i == target.x) && (target.z == 1)){ //check if cell below is target
-                        l1[i][j] = count + via;
-                        return true; //path found
-                    }
-                    if(l1[i][j] == 0){ //check if cell below is empty
-                        l1[i][j] = count + via;
+    while(count < x * y * via * m){
+        for (int i = 0; i< x; i++){
+            for (int j = 0; j< y; j++){
+                for (int k = 0; k < m; k++){
+                    if(manyLayers[k].l[i][j] == count){
                         
-                    }
-                    
-                    if((j == target.y) && (i == target.x) && (target.z == 3)){ //check if cell above is target
-                        l3[i][j] = count + via;
-                        return true; //path found
-                    }
-                    if(l3[i][j] == 0){ //check if cell above is empty
-                        l3[i][j] = count + via;
-                    }
-                    
-                    if((j == target.y) && ((i+1) == target.x) && (target.z == 2)){ //check if cell upwards (in same metal layer) is target
-                        l2[i+1][j] = count+1;
-                        imax = i + 1;
-                        return true; //path found
-                    }
-                    if((i+1<x) && (l2[i+1][j] == 0)){ //check if cell upwards (in same metal layer) is empty
-                        imax = i + 1;
-                        //                                j = jmin;
-                        l2[i+1][j] = count+1;
-                    }
-                    
-                    if((j == target.y) && ((i-1) == target.x) && (target.z == 2)){ //check if cell downwards (in same metal layer) is target
-                        imin = i-1;
-                        l2[i-1][j] = count+1;
-                        return true; //path found
-                    }
-                    if((i-1>=0) && (l2[i-1][j] == 0)){ //check is cell downwards (in same metal layer) is empty
-                        imin = i-1;
-                        //                                j = jmin;
-                        //                                i = imin;
-                        l2[i-1][j] = count+1;
-                    }
-                }
-                
-                if (l3[i][j] == count){ //check if cell in l3 == count
-                    
-                    if((i == target.x) && (j == target.y) && (target.z == 2)){ //check if cell below is target
-                        l2[i][j] = count + via;
-                        return true; //path found
-                    }
-                    if(l2[i][j] == 0){ //check if cell below is empty
-                        l2[i][j] = count + via;
-                    }
-                    
-                    if((i == target.x) && ((j+1) == target.y) && (target.z == 3)){ //check if cell to the right is target
-                        l3[i][j+1] = count+1;
-                        jmax = j + 1;
-                        return true; //path found
-                    }
-                    if((j+1<y) && (l3[i][j+1] == 0)){ //check if cell to the right is empty
-                        jmax = j + 1;
-                        //                                i = imin;
-                        l3[i][j+1] = count+1;
-                    }
-                    
-                    if((i == target.x) && ((j-1) == target.y) && (target.z == 3)){ //check if cell to the left if target
-                        l3[i][j-1] = count+1;
-                        jmin = j-1;
-                        return true; //path found
-                    }
-                    if((j-1>=0) && (l3[i][j-1] == 0)){ //check if cell to the left is empty
-                        jmin = j-1;
-                        //                                    i = imin;
-                        //                                    j = jmin;
-                        l3[i][j-1] = count+1;
+                        //flooding on different metal layer.....
+                        if((i == target.x) && (j == target.y) && (target.z == k+1)){
+                            //check if cell above (vertical) is target
+                            if(manyLayers[k+1].dir == 0){ //vertical
+                                if(j % manyLayers[k+1].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k+1].ratio && j+index<y){
+                                        manyLayers[k+1].l[i][j+index] = count + via;
+                                        index++;
+                                    }
+                                }
+                            }
+                            //check if cell above (horizontal) is target
+                            if(manyLayers[k+1].dir == 1){ //horizontal
+                                if(i % manyLayers[k+1].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k+1].ratio && i+index<x){
+                                        manyLayers[k+1].l[i+index][j] = count + via;
+                                        index++;
+                                    }
+                                }
+                            }
+                            return true; //path found
+                        }
+                        if((i == target.x) && (j == target.y) && (target.z == k - 1)){
+                            //check is cell below (vertical) is target
+                            if(manyLayers[k-1].dir == 0){ //vertical
+                                if(j % manyLayers[k-1].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k-1].ratio && j+index<y){
+                                        manyLayers[k-1].l[i][j+index] = count + via;
+                                        index++;
+                                    }
+                                }
+                            }
+                            //check is cell below (horizontal) is target
+                            else if(manyLayers[k-1].dir == 1){ //horizontal
+                                if(i % manyLayers[k-1].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k-1].ratio && i+index<x){
+                                        manyLayers[k-1].l[i+index][j] = count + via;
+                                        index++;
+                                    }
+                                }
+                            }
+                            return true; //path found
+                        }
+                        if (k-1 >= 0)//check if cell below is empty
+                            if(manyLayers[k-1].l[i][j] == 0){
+                                
+                                //cell below is on vertical layer
+                                if(manyLayers[k-1].dir == 0){ //vertical
+                                    if(j % manyLayers[k-1].ratio == 0){
+                                        int index = 0;
+                                        while(index < manyLayers[k-1].ratio && j+index<y){
+                                            manyLayers[k-1].l[i][j+index] = count + via;
+                                            index++;
+                                        }
+                                    }
+                                }
+                                //cell below is on horizontal layer
+                                else if(manyLayers[k-1].dir == 1){ //horizontal
+                                    if(j % manyLayers[k-1].ratio == 0){
+                                        int index = 0;
+                                        while(index < manyLayers[k-1].ratio && i+index<x){
+                                            manyLayers[k-1].l[i+index][j] = count + via;
+                                            index++;
+                                        }
+                                    }
+                                }
+                            }
+                        if (k+1 < m){//check if cell above is empty
+                            if(manyLayers[k+1].l[i][j] == 0){
+                                if(manyLayers[k+1].dir == 0){ //vertical
+                                    if(j % manyLayers[k+1].ratio == 0){
+                                        int index = 0;
+                                        while(index < manyLayers[k+1].ratio && j+index<y){
+                                            manyLayers[k+1].l[i][j+index] = count + via;
+                                            index++;
+                                        }
+                                    }
+                                }
+                                else if(manyLayers[k+1].dir == 1){ //horizontal
+                                    if(i % manyLayers[k+1].ratio == 0){
+                                        int index = 0;
+                                        while(index < manyLayers[k+1].ratio && i+index<x){
+                                            manyLayers[k+1].l[i+index][j] = count + via;
+                                            index++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        //flooding on same metal layer
+                        if(manyLayers[k].dir == 1){ //horizontal
+                            if((i == target.x) && ((j+1) == target.y) && (target.z == k)){ //check if cell to the right is target
+//                                manyLayers[k].l[i][j+1] = count+ 1;
+                                
+                                if(i % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && i+index<x){
+                                       manyLayers[k].l[i+index][j+1] = count + 1;
+                                        index++;
+                                    }
+                                }
+                                
+                                if ((j+1) > jmax)
+                                    jmax = j+1;
+                                return true; //path found
+                            }
+                            if((j+1<y) && ((manyLayers[k].l[i][j+1] == 0))){ //check if cell to the right is empty
+                                if ((j+1) > jmax)
+                                    jmax = j+1;
+                                
+                                if(i % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && i+index<x){
+                                        manyLayers[k].l[i+index][j+1] = count + 1;
+                                        index++;
+                                    }
+                                }
+                            }
+                            
+                            if((i == target.x) && ((j-1) == target.y) && (target.z == k)){ //check if cell to the left is target
+                                
+                                if(i % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && i+index<x){
+                                        manyLayers[k].l[i+index][j-1] = count + 1;
+                                        index++;
+                                    }
+                                
+                                jmin = j-1;
+                                return true; //path found
+                            }
+                            }
+                            if((j-1>=0) && ((manyLayers[k].l[i][j-1] == 0))){  //check if cell to the left is empty
+                                jmin = j-1;
+                                
+                                if(i % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && i+index<x){
+                                        manyLayers[k].l[i+index][j-1] = count + 1;
+                                        index++;
+                                    }
+                                 }
+        
+                            }
+                        }
+                        if(manyLayers[k].dir == 0){ //vertical
+                           
+                            if((j == target.y) && ((i+1) == target.x) && (target.z == k)){ //check if cell upwards (in same metal layer) is target
+                                
+                                if(j % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && j+index<x){
+                                        manyLayers[k].l[i+1][j+index] = count + 1;
+                                        index++;
+                                    }
+                                }
+                                
+                                if ((i+1) > imax)
+                                    imax = i + 1;
+                                return true; //path found
+                            }
+                            if((i+1<x) && ((manyLayers[k].l[i+1][j] == 0))){ //check if cell upwards (in same metal layer) is empty
+                                if ((i+1) > imax)
+                                    imax = i + 1;
+                                
+                                if(j % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && j+index<x){
+                                        manyLayers[k].l[i+1][j+index] = count + 1;
+                                        index++;
+                                    }
+                                }
+                            }
+                            if((j == target.y) && ((i-1) == target.x) && (target.z == k)){ //check if cell downwards (in same metal layer) is target
+                                imin = i-1;
+//                                manyLayers[k].l[i-1][j] = count+1;
+                                
+                                if(j % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && j+index<x){
+                                        manyLayers[k].l[i-1][j+index] = count + 1;
+                                        index++;
+                                    }
+                                }
+                                
+                                return true; //path found
+                            }
+                            if((i-1>=0) && ((manyLayers[k].l[i-1][j] == 0))){ //check is cell downwards (in same metal layer) is empty
+                                imin = i-1;
+                                
+                                if(j % manyLayers[k].ratio == 0){
+                                    int index = 0;
+                                    while(index < manyLayers[k].ratio && j+index<x){
+                                        manyLayers[k].l[i-1][j+index] = count + 1;
+                                        index++;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
         count++;
-        
     }
     return false; //path not found
 }
-
-bool backTracking(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, coord target, int via, coord source1){
+bool backTracking(vector<layer> &manyLayers, int x, int y, int m, coord source, coord target, int via, coord source1){
     int count = 0; //count we're looking for
-    switch (target.z){
-        case(1): {
-            count = l1[target.x][target.y]; //initialize count with cost of target cell
-            l1[target.x][target.y] = route; //set target cell to route
-        }
-            break;
-        case(2): {
-            count = l2[target.x][target.y]; //initialize count with cost of target cell
-            l2[target.x][target.y] = route;  //set target cell to route
-        }
-            break;
-        case(3): {
-            count = l3[target.x][target.y]; //initialize count with cost of target cell
-            l3[target.x][target.y] = route;  //set target cell to route
-        }
-            break;
-    }
+    count = manyLayers[target.z].l[target.x][target.y];
+    manyLayers[target.z].l[target.x][target.y] = -5;
     
     if (count <= 0) //did not reach target and there is no route
         return false;
+    
     int i = target.x;
     int j = target.y;
-    int z = target.z;
-    while(i!=source.x | j!=source.y | z!=source.z){
+    int k = target.z;
+    while(i!=source.x | j!=source.y | k!=source.z){
         //horizontal
-        if(z==1){
-            if((j-1 >= 0) && (l1[i][j-1] == (count - 1)) && (l1[i][j-1] >= 0)){ //checking if next cell in route is left cell
-                l1[i][j-1] = route;
+        if(manyLayers[k].dir == 1){
+            i -= (i%manyLayers[k].ratio);
+            if ((j-1 >= 0) && (manyLayers[k].l[i][j-1] == route)){
+                manyLayers[source.z].l[source.x][source.y] = s_value;
+                return true;
+            }
+            else if((j+1 < y) && (manyLayers[k].l[i][j+1] == route)){
+                manyLayers[source.z].l[source.x][source.y] = s_value;
+                return true;
+            }
+            else {
+                if(k+1 < m){
+                    if(manyLayers[k+1].l[i][j] == route){
+                        manyLayers[source.z].l[source.x][source.y] = s_value;
+                        return true;
+                    }
+                }
+                if (k-1 >= 0){
+                    if(manyLayers[k-1].l[i][j] == route){
+                        manyLayers[source.z].l[source.x][source.y] = s_value;
+                        return true;
+                    }
+                }
+            }
+            if((j-1 >= 0) && ((manyLayers[k].l[i][j-1] == (count - 1)) || (manyLayers[k].l[i][j-1] == count )) && (manyLayers[k].l[i][j-1] >= 0)){ //checking if next cell in route is left cell
+                
+                if (manyLayers[k].l[i][j-1] != count )
+                    count--;
+                manyLayers[k].l[i][j-1] = -5;
+                
                 j--;
-                count--;
             }
-            else if ((j+1 < y) && (l1[i][j+1] == (count - 1)) && (l1[i][j+1] >= 0)){ //checking if next cell in route is right cell
-                l1[i][j+1] = route;
+            else if ((j+1 < y) && ((manyLayers[k].l[i][j+1] == (count - 1)) ||(manyLayers[k].l[i][j+1] == count)) && (manyLayers[k].l[i][j+1] >= 0)){ //checking if next cell in route is right cell
+                if(manyLayers[k].l[i][j+1] != count)
+                    count--;
+                manyLayers[k].l[i][j+1] = -5;
                 j++;
-                count--;
             }
-            else if(l2[i][j] == (count-via) && (l2[i][j] >= 0)){ //checking if next cell in route is cell above
-                z = 2;
-                count -= via;
-                l2[i][j] = route;
-                l1[i][j] = route;
-                //                l2[i][j] = v12;
-                //                l1[i][j] = v12;
-                vias ++;
-            }
-        }
-        else if (z == 3){
-            if((j-1 >= 0) && (l3[i][j-1] == (count - 1)) && (l3[i][j-1] >= 0)){ //checking if next cell in route is left cell
-                l3[i][j-1] = route;
-                j--;
-                count--;
-            }
-            else if ((j+1 < y) && (l3[i][j+1] == (count - 1)) && (l3[i][j+1] >= 0)){ //checking if next cell in route is right cell
-                l3[i][j+1] = route;
-                j++;
-                count--;
-            }
-            else if(l2[i][j] == (count-via) && (l2[i][j] >= 0)){ //checking if next cell in route is cell below
-                z = 2;
-                count-=via;
-                //                l2[i][j] = v23;
-                //                l3[i][j] = v23;
-                l2[i][j] = route;
-                l3[i][j] = route;
-                vias ++;
+            else
+            {
+                if(k+1 < m){
+                    if(manyLayers[k+1].l[i][j] == (count-via) && (manyLayers[k+1].l[i][j] >= 0)){ //checking if next cell in route is cell above
+                        k++;
+                        count -= via;
+                        manyLayers[k].l[i][j] = -5;
+                        manyLayers[k-1].l[i][j] = -5;
+                        vias ++;
+                        continue;
+                    }
+                }
+                if (k-1 >= 0){
+                    if(manyLayers[k-1].l[i][j] == (count-via) && (manyLayers[k-1].l[i][j] >= 0)){ //checking if next cell in route is cell above
+                        k--;
+                        count -= via;
+                        manyLayers[k].l[i][j] = -5;
+                        manyLayers[k+1].l[i][j] = -5;
+                        vias ++;
+                        continue;
+                    }
+                }
             }
         }
         //vertical
         else {
-            if((i-1 >= 0) && (l2[i-1][j] == (count - 1)) && (l2[i-1][j] >= 0)){ //checking if next cell in route is cell downwards (in same metal layer)
-                l2[i-1][j] = route;
+            
+            j -= (j%manyLayers[k].ratio);
+            if((i-1 >= 0) && (manyLayers[k].l[i-1][j] == route)){
+                manyLayers[source.z].l[source.x][source.y] = s_value;
+                return true;
+            }
+            else if ((i+1 < x) && (manyLayers[k].l[i+1][j] == route)){
+                manyLayers[source.z].l[source.x][source.y] = s_value;
+                return true;
+            }
+            else{
+                if(k+1 < m){
+                    if (manyLayers[k+1].l[i][j] == route){
+                        manyLayers[source.z].l[source.x][source.y] = s_value;
+                        return true;
+                    }
+                }
+                if(k-1 >= 0){
+                    if (manyLayers[k-1].l[i][j] == route){
+                        manyLayers[source.z].l[source.x][source.y] = s_value;
+                        return true;
+                    }
+                }
+            }
+                
+            
+            if((i-1 >= 0) && ((manyLayers[k].l[i-1][j] == (count - 1)) || (manyLayers[k].l[i-1][j] == count)) && (manyLayers[k].l[i-1][j] >= 0)){ //checking if next cell in route is cell downwards (in same metal layer)
+                if(manyLayers[k].l[i-1][j] != count)
+                    count--;
+                manyLayers[k].l[i-1][j] = -5;
                 i--;
-                count--;
             }
-            else if ((i+1 < x) && (l2[i+1][j] == (count - 1)) && (l2[i+1][j] >= 0)){ //checking if next cell in route is cell upwards (in same metal layer)
-                l2[i+1][j] = route;
+            else if ((i+1 < x) && ((manyLayers[k].l[i+1][j] == (count - 1)) || (manyLayers[k].l[i+1][j] == count)) && (manyLayers[k].l[i+1][j] >= 0)){ //checking if next cell in route is cell upwards (in same metal layer)
+                if(manyLayers[k].l[i+1][j] != count)
+                    count--;
+                manyLayers[k].l[i+1][j] = -5;
                 i++;
-                count--;
             }
-            else if(l3[i][j] == (count-via) && (l3[i][j] >= 0)){ //checking if next cell in route is cell above
-                z = 3;
-                count-=via;
-                //                l3[i][j] = v23;
-                //                l2[i][j] = v23;
-                l3[i][j] = route;
-                l2[i][j] = route;
-                vias ++;
-            }
-            else if(l1[i][j] == (count-via) && (l1[i][j] >= 0)){ //checking if next cell in route is cell below
-                //                l1[i][j] = v12;
-                //                l2[i][j] = v12;
-                l1[i][j] = route;
-                l2[i][j] = route;
-                z = 1;
-                count-=via;
-                vias ++;
+            else{
+                if(k+1 < m){
+                    if (manyLayers[k+1].l[i][j] == (count-via) && (manyLayers[k+1].l[i][j] >= 0)){ //checking if next cell in route is cell above
+                        k++;
+                        count-=via;
+                        manyLayers[k].l[i][j] = -5;
+                        manyLayers[k-1].l[i][j] = -5;
+                        vias ++;
+                    }
+                }
+                if(k-1 >= 0){
+                    if(manyLayers[k-1].l[i][j] == (count-via) && (manyLayers[k-1].l[i][j] >= 0)){ //checking if next cell in route is cell below
+                        k--;
+                        manyLayers[k].l[i][j] = -5;
+                        manyLayers[k+1].l[i][j] = -5;
+                        count-=via;
+                        vias ++;
+                    }
+                    
+                }
             }
         }
     }
     
     return true;
 }
-
-void backToLife(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y){
+void backToLife(vector<layer> &manyLayers, int x, int y, int m){
     for (int i=0; i<x; i++){
         for(int j=0; j<y; j++){
-            // emptying flooded cells that are not part of route
-            if(l1[i][j] > 0)
-                l1[i][j] = 0;
-            if(l2[i][j] > 0)
-                l2[i][j] = 0;
-            if(l3[i][j] > 0)
-                l3[i][j] = 0;
-            //getting # of cells
-            if (l1[i][j] == route)
-                cells++;
-            if (l2[i][j] == route)
-                cells++;
-            if (l3[i][j] == route)
-                cells++;
+            for(int k=0; k<m; k++){
+                // emptying flooded cells that are not part of route
+                if(manyLayers[k].l[i][j] > 0)
+                    manyLayers[k].l[i][j] = 0;
+                
+                if(manyLayers[k].l[i][j] == -5){
+                    if(manyLayers[k].dir == 0){ //vertical
+                        j -= (j % manyLayers[k].ratio);
+                        int index = 0;
+                        while(index < manyLayers[k].ratio && j+index<x){
+                            manyLayers[k].l[i][j+index] = route;
+                            index++;
+                        }
+                    }
+                    else if (manyLayers[k].dir == 1){ //horizontal
+                        i -= (i % manyLayers[k].ratio);
+                        int index = 0;
+                        while(index < manyLayers[k].ratio && j+index<x){
+                            manyLayers[k].l[i+index][j] = route;
+                            index++;
+                        }
+                    }
+                }
+                
+                //getting # of cells
+                if (manyLayers[k].l[i][j] == route)
+                    cells++;
+            }
         }
     }
 }
-
-bool classicalImplementation(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, coord target, int via, bool swapCoord, bool floodLessB){
+bool classicalImplementation(vector<layer> &manyLayers, int x, int y, int m, coord source, coord target, int via, bool floodLessB){
     coord newSource;
-    cells = 0; //# of cells
-    vias = 0; //# of vias
     bool isSource = true; //source is same as newSource
-    int swap;
-    if (swapCoord) //if target and source will be swapped if no source
-        swap = 2; //swap = 2 (to allow for 1 swap)
-    else
-        swap = 1; //swap = 1 (to allow for 0 swaps)
+    cells = 0;
+    s_value = manyLayers[source.z].l[source.x][source.y];
+    if(!floodLessB)
+        newSource = traverse(manyLayers[source.z].l, manyLayers[source.z].dir, manyLayers[source.z].ratio, x, y, source, target, isSource);
+    t_value = manyLayers[target.z].l[target.x][target.y];
     
-    while (swap > 0){
-        switch (source.z){
-            case(1): {
-                s_value = l1[source.x][source.y]; //s_value is values of source cell (used if no path is available to retrieve old matrix)
-                if (!floodLessB) //if implementation is not floodLess (more DFS)
-                    newSource = traverse(l1, x, y, source, target, isSource);
-            }
-                break;
-            case (2): {
-                s_value = l2[source.x][source.y]; //s_value is values of source cell (used if no path is available to retrieve old matrix)
-                if (!floodLessB) //if implementation is not floodLess (more DFS)
-                    newSource = traverse(l2, x, y, source, target, isSource);
-            }
-                break;
-            case (3): {
-                s_value = l3[source.x][source.y]; //s_value is values of source cell (used if no path is available to retrieve old matrix)
-                if (!floodLessB) //if implementation is not floodLess (more DFS)
-                    newSource = traverse(l3, x, y, source, target, isSource);
-            }
-                break;
-        }
-        
-        switch (target.z){
-            case(1): {
-                t_value = l1[target.x][target.y]; //t_value is values of target cell (used if no path is available to retrieve old matrix)
-            }
-                break;
-            case (2): {
-                t_value = l2[target.x][target.y]; //t_value is values of target cell (used if no path is available to retrieve old matrix)
-            }
-                break;
-            case (3): {
-                t_value = l3[target.x][target.y]; //t_value is values of target cell (used if no path is available to retrieve old matrix)
-            }
-                break;
-        }
-        
-        if (floodLessB) //if implementation is floodLess (more DFS)
-            newSource = floodLess(l1, l2, l3, x, y, source, target);
-        
-        int count0 = 1; //initial count for cell in flooding
-        
-        //if target is reached
-        if ((newSource.x == target.x) && (newSource.y == target.y) && (newSource.z == target.z)){
-            printMatrix(l1, x, y);
-            cout << endl << endl;
-            printMatrix(l2, x, y);
-            cout << endl << endl;
-            printMatrix(l3, x, y);
-            cout << endl << endl;
-            cout << "Cost = " << (cells + vias * via) << endl;
-            return true;
-        }
-        else {
-            cells = 0; //reset cells count
-            if ((source.x != newSource.x) && (source.y != newSource.y) && (source.z != newSource.z))
-                isSource = false;
-        }
-        flood(l1, l2, l3, x, y, newSource, target, via, count0, isSource);
-        
-        
-        //        ///////////////////
-        //        //remove before submission
-        //        cout << "Flooding" << endl;
-        //        printMatrix(l1, x, y);
-        //        cout << endl << endl;
-        //        printMatrix(l2, x, y);
-        //        cout << endl << endl;
-        //        printMatrix(l3, x, y);
-        //        cout << endl << endl;
-        //        ///////////////////
-        //        //remove before submission
-        
-        
-        if (backTracking(l1, l2, l3, x, y, newSource, target, via, source)){ //get route
-            backToLife(l1, l2, l3, x, y); //empty flooded, non-routed cells
-            cout << "BACKTRACKING" << endl;
-            printMatrix(l1, x, y);
-            cout << endl << endl;
-            printMatrix(l2, x, y);
-            cout << endl << endl;
-            printMatrix(l3, x, y);
-            cout << endl << endl;
-            cout << "Cost = " << (cells + vias * via) << endl;
-            swap = 0; //set swap to 0 (aka do not swap) because path is found
-            return true;
-        } else {
-            swap--; //decrement swap
-            backToLife(l1, l2, l3, x, y); //empty flooded cells
-            cells = 0;
-            switch (source.z){
-                case(1): undoTraversal(l1, x, y, source, newSource); //remove traversed cells as no path is found
-                    break;
-                case (2): undoTraversal(l2, x, y, source, newSource); //remove traversed cells as no path is found
-                    break;
-                case (3): undoTraversal(l3, x, y, source, newSource); //remove traversed cells as no path is found
-                    break;
-            }
-            switch (target.z){
-                case(1): {
-                    l1[target.x][target.y] = t_value; //set target cell to target value before flooding or traversal
-                }
-                    break;
-                case(2): {
-                    l2[target.x][target.y] = t_value; //set target cell to target value before flooding or traversal
-                }
-                    break;
-                case(3): {
-                    l3[target.x][target.y] = t_value; //set target cell to target value before flooding or traversal
-                }
-                    break;
-            }
-            //swap source and target
-            coord temp = source;
-            source = target;
-            target = temp;
-            if (swap == 0){ //if no more swaps, print grids anyway
-                cout << "No Path available" << endl;
-                route++;
-                printMatrix(l1, x, y);
-                cout << endl << endl;
-                printMatrix(l2, x, y);
-                cout << endl << endl;
-                printMatrix(l3, x, y);
-                cout << endl << endl;
-                return false;
-            }
-        }
+    if(floodLessB)
+        newSource = floodLess(manyLayers, x, y, m, source, target);
+    
+    int count0 = 1; //initial count for cell in flooding
+    
+    //if target is reached
+    if ((newSource.x == target.x) && (newSource.y == target.y) && (newSource.z == target.z)){
+        printMatrices(manyLayers, x, y, m);
+        cells = countCells(manyLayers, x, y, m);
+        cout << "Cells = " << cells << endl;
+        cout << "Vias = " << vias << endl;
+        cout << "Cost = " << (cells + vias * via) << endl;
+        return true;
     }
+    else {
+        cells = 0; //reset cells count
+        if ((source.x != newSource.x) && (source.y != newSource.y) && (source.z != newSource.z))
+            isSource = false;
+    }
+//    vector<coord> changed;
+    flood(manyLayers, x, y, m, newSource, target, via, count0, isSource);
+//    printMatrices(manyLayers, x, y, m);
+    
+    if (backTracking(manyLayers, x, y, m, newSource, target, via, source)){ //get route
+//        changed.erase(changed.begin(), changed.end());
+        cells = 0;
+        backToLife(manyLayers, x, y, m); //empty flooded, non-routed cells
+        cout << "BACKTRACKING" << endl;
+        printMatrices(manyLayers, x, y, m);
+        cout << "Cells = " << cells << endl;
+        cout << "Vias = " << vias << endl;
+        cout << "Cost = " << (cells + vias * via) << endl;
+        return true;
+    } else {
+        backToLife(manyLayers, x, y, m); //empty flooded cells
+        cells = 0;
+
+        undoTraversal(manyLayers[source.z].l, manyLayers[source.z].dir, x, y, source, newSource);
+        manyLayers[target.z].l[target.x][target.y] = t_value;
+        cout << "No Path available" << endl;
+        route++;
+        printMatrices(manyLayers, x, y, m);
+        return false;
+    }
+    
     return false;
 }
-
-void undoTraversal(vector<vector<int>> &l,  int x, int y, coord s, coord t){
-    if (s.z  == 2){
+void undoTraversal(vector<vector<int>> &l, int dir, int x, int y, coord s, coord t){
+    if (dir  == 0){ //vertical
         if (t.x > s.x){
             for (int i = s.x + 1; i<=t.x; i++){ //vertical
                 if (l[i][s.y] == route){ //if cell was part of route
@@ -758,7 +819,7 @@ void undoTraversal(vector<vector<int>> &l,  int x, int y, coord s, coord t){
             }
         }
         else { //vertical
-            for (int i = s.x + 1; i>=t.x; i--){
+            for (int i = s.x; i>=t.x; i--){
                 if (l[i][s.y] == route){ //if cell was part of route
                     l[i][s.y] = 0; //empty cell
                 }
@@ -775,7 +836,7 @@ void undoTraversal(vector<vector<int>> &l,  int x, int y, coord s, coord t){
             }
         }
         else {
-            for (int j = s.y + 1; j >= t.y; j--){
+            for (int j = s.y; j >= t.y; j--){
                 if (l[s.x][j] == route){ //if cell was part of route
                     l[s.x][j] = 0; //empty cell
                 }
@@ -784,32 +845,25 @@ void undoTraversal(vector<vector<int>> &l,  int x, int y, coord s, coord t){
     }
     l[s.x][s.y] = s_value; //set source to value before filling (might not be zero)
 }
-
-coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord newSource, coord target){
+coord floodLess(vector<layer> &manyLayers, int x, int y, int m, coord newSource, coord target){
     int count = 0;
     coord newSource1; //return of traverse
     coord newSource2 = newSource; //parameter of traverse
     coord newSourceBuffer; //to save last value of newSource1
     newSourceBuffer = newSource; //initially it is set to newSource
-    while (count < 3){
+    int s_value;
+    while (count < m){
         //check is initial newSource is the same as newSource2
         bool isSource = (newSource2.x == newSource.x) && (newSource2.y == newSource.y) && (newSource2.z == newSource.z);
-        switch(newSource2.z){
-            case 1: newSource1 = traverse(l1, x, y, newSource2, target, isSource);
-                break;
-            case 2:newSource1 = traverse(l2, x, y, newSource2, target, isSource);
-                break;
-            case 3:
-                newSource1 = traverse(l3, x, y, newSource2, target, isSource);
-                break;
-            default:
-                break;
-        }
+        s_value = manyLayers[newSource2.z].l[newSource2.x][newSource2.y];
+        newSource1 = traverse(manyLayers[newSource2.z].l, manyLayers[newSource2.z].dir, manyLayers[newSource2.z].ratio, x, y, newSource2, target, isSource);
+
         if ((newSource1.x == newSource2.x) && (newSource1.y == newSource2.y) && (newSource1.z == newSource2.z)){ //no traverse
             if ((newSource1.x == target.x) && (newSource1.y == target.y) && (newSource1.z == target.z)) //target reached
                 return target;
             if(newSourceBuffer.z != newSource1.z) //if no traverse, reduce vias
                 vias--;
+            manyLayers[newSource1.z].l[newSource1.x][newSource1.y] = s_value;
             return newSourceBuffer; //return saved newSource1 value
         }
         else {
@@ -821,19 +875,24 @@ coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<
         }
         else {
             if(newSource2.z < target.z){ //z of target is greater
-                newSource2.z = ((newSource2.z) % 3 )+ 1; //increment z sent to traverse
+                newSource2.z = ((newSource2.z) % m ) + 1; //increment z sent to traverse
                 vias++;
             }
             else if (newSource2.z > target.z){ //z of target is less
-                newSource2.z = ((newSource2.z - 1) % 3 ); //decrement z sent to traverse
+                newSource2.z = ((newSource2.z - 1) % m); //decrement z sent to traverse
                 vias++;
             }
-            else if ((newSource2.z == target.z) && ((target.z == 1) || (target.z == 3)) && (newSource2.x != target.x)){ //horizontal layer and there is a difference vertically
-                newSource2.z = 2;
+            else if ((newSource2.z == target.z) && (manyLayers[target.z].dir == 1) && (newSource2.x != target.x)){ //horizontal layer and there is a difference vertically
+                newSource2.z = ((newSource2.z +1) % m );
+                
+                //to do
+//
+//                if(manyLayers[newSource2.z].dir == 1) //horizontal
+//                    newSource2.z = ((newSource2.z +1) % m);
                 vias++;
             }
-            else if ((newSource2.z == target.z) && (target.z == 2) && (newSource2.y != target.y)){ //vertical layer and their is a difference horizontally
-                newSource2.z = ((newSource2.z) % 3 )+ 1;
+            else if ((newSource2.z == target.z) && (manyLayers[target.z].dir == 0) && (newSource2.y != target.y)){ //vertical layer and there is a difference horizontally
+                newSource2.z = ((newSource2.z +1) % m);
                 vias++;
             }
         }
@@ -842,34 +901,33 @@ coord floodLess(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<
     }
     return newSource1;
 }
-
-void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, coord source, vector<coord> target, int via, bool swapCoord, bool floodLessB){
+void multiPins(vector<layer> &manyLayers, int x, int y, int m, vector<coord> target, int via, bool floodLessB){
     int routeNo = route;
-    int i = 0;
-    while(!classicalImplementation(l1, l2, l3, x, y, source, target[0], via, swapCoord, floodLessB))
+    int i = 1;
+    while(!classicalImplementation(manyLayers, x, y, m, target[0], target[1], via, floodLessB))
     {
         route--;
-        coord temp = target[0];
+        coord temp = target[1];
         if (i >= (target.size()-1)){
             cout << "No route\n";
             return;
         }
-        target[0] = target[i+1];
+        target[1] = target[i+1];
         target[i+1] = temp;
         i++;
     }
     route = routeNo;
-    for (int i=1; i<target.size(); i++){
+    for (int i=2; i<target.size(); i++){
         vector<coord> coords;
-        getCoords(l1, l2, l3, x, y, routeNo, coords);
+        getCoords(manyLayers, x, y, m, routeNo, coords);
         coord targetPin = target[i];
         vector<pair<int,int>> targetsDist;
-        getDistance(targetPin, coords, targetsDist);
+        getDistance(manyLayers[targetPin.z].dir, targetPin, coords, targetsDist);
         for(int i=0; i<targetsDist.size(); i++){
             cout << targetsDist[i].first << "\t\t" << coords[targetsDist[i].second].x << " " << coords[targetsDist[i].second].y << " " << coords[targetsDist[i].second].z <<endl;
         }
         int j = 0;
-        while(!classicalImplementation(l1, l2, l3, x, y, targetPin, coords[targetsDist[j].second], via, swapCoord, floodLessB)){
+        while(!classicalImplementation(manyLayers, x, y, m, coords[targetsDist[j].second], targetPin, via, floodLessB)){
             j++;
             route--;
             if (j>(targetsDist.size()-1)){
@@ -878,12 +936,11 @@ void multiPins(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<i
             }
         }
     }
-
+    
 }
-
-void getDistance(coord source, vector<coord> targets, vector<pair<int,int>> &targetsDist){
+void getDistance(int dir, coord source, vector<coord> targets, vector<pair<int,int>> &targetsDist){
     for(int i = 0; i<targets.size(); i++){
-        if(source.z == 2){ //vertical
+        if(dir == 0){ //vertical
             int distance = abs(targets[i].x - source.x);
             targetsDist.push_back(make_pair(distance, i));
         }else{ //horizontal
@@ -893,33 +950,51 @@ void getDistance(coord source, vector<coord> targets, vector<pair<int,int>> &tar
     }
     sort(targetsDist.begin(), targetsDist.end());
 }
-
-
-void getCoords(vector<vector<int>> &l1, vector<vector<int>> &l2, vector<vector<int>> &l3, int x, int y, int route, vector<coord> &coords){
+void getCoords(vector<layer> &manyLayers, int x, int y, int m, int route, vector<coord> &coords){
     for (int i=0; i<x; i++){
         for(int j=0; j<y; j++){
-            // emptying flooded cells that are not part of route
-            if(l1[i][j] == route){
-                coord temp;
-                temp.x = i;
-                temp.y = j;
-                temp.z = 1;
-                coords.push_back(temp);
+            for(int k = 0; k<m; k++){
+                if(manyLayers[k].l[i][j] == route){
+                    coord temp;
+                    temp.x = i;
+                    temp.y = j;
+                    temp.z = k;
+                    coords.push_back(temp);
+                }
             }
-            if(l2[i][j] == route){
-                coord temp;
-                temp.x = i;
-                temp.y = j;
-                temp.z = 2;
-                coords.push_back(temp);
+        }
+    }
+}
+
+int countCells(vector<layer> manyLayers, int x, int y, int m){
+    int count = 0;
+    for (int i=0; i<x; i++){
+        for(int j=0; j<y; j++){
+            for (int k=0; k<m; k++){
+                if(manyLayers[k].l[i][j] == route)
+                    count++;
             }
-            if(l3[i][j] == route){
-                coord temp;
-                temp.x = i;
-                temp.y = j;
-                temp.z = 3;
-                coords.push_back(temp);
+        }
+    }
+    return count;
+}
+void computeRatio(vector<layer> &manyLayers){
+    bool isFirstV = true, isFirstH = true;
+    float pitchV, pitchH;
+    for (int i=0; i<manyLayers.size(); i++){
+        if(manyLayers[i].dir == 0){ //vertical
+            if(isFirstV){  //first vertical
+                pitchV = manyLayers[i].pitch;
+                isFirstV = false;
             }
+            manyLayers[i].ratio = ceil(manyLayers[i].pitch / pitchV);
+        }
+        if (manyLayers[i].dir == 1){ //horizontal
+            if (isFirstH){ //first horizontal
+                pitchH = manyLayers[i].pitch;
+                isFirstH = false;
+            }
+            manyLayers[i].ratio = ceil(manyLayers[i].pitch / pitchH);
         }
     }
 }
