@@ -43,13 +43,13 @@ void obstructRoute(vector <layer> &manyLayers, int x, int y, int m, vector <coor
 //main
 int main(){
     
-    string inputFile1 = "test1.txt";
-    string inputFile2 = "test1.1.txt";
-    string outputFile = "out_test1.txt";
+//    string inputFile1 = "test1.txt";
+//    string inputFile2 = "test1.1.txt";
+//    string outputFile = "out_test1.txt";
     
-//    string inputFile1 = "test2.txt";
-//    string inputFile2 = "test2.2.txt";
-//    string outputFile = "out_test2.txt";
+    string inputFile1 = "test2.txt";
+    string inputFile2 = "test2.2.txt";
+    string outputFile = "out_test2.txt";
     
     int x, y, m; //coordinates of grid
     
@@ -1341,6 +1341,10 @@ void parseInput(string filename, string outputName, vector<coord> &pins, vector<
                 continue;
             }
             else {
+                if (s == ""){
+                    getline(inFile, s);
+                    continue;
+                }
                 size_t pos = s.find(':');
                 if (pos != NULL){
                     string def = s.substr(0,pos);
