@@ -62,4 +62,12 @@ For router.cpp:
 
     4) The z-coordinate is either 1, 2 or 3
     
-    
+  
+  FloorPlanner.cpp:
+ -  It takes the input as a directory of def files for the hard macros
+ -  The soft Macros are entered through a specified file that contains their names and data
+ -  Through this stages, DEF files are parsed then Linear equations are created and solved for both soft and hard macros 
+ - It outputs the following:
+        A grid for the Router
+        File with module locations, module sizes, pin data ( name , metal layer , normalized location) for pin assignment
+        Final DEF file components without the NETS section which is an output of the router 
