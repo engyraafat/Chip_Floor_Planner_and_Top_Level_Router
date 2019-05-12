@@ -1,0 +1,4 @@
+Components 3
+arbiter_1 arbiter + PLACED ( 63543 39543 ) W ;
+cpu_1 cpu + PLACED ( 1 1 ) W ;
+crc32_1 crc32 + PLACED ( 65737 1 ) N ;

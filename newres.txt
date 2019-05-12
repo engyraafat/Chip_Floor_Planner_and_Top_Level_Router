@@ -1,0 +1,13 @@
+W:94558
+H:52364
+Total Area:656467816
+Final Utilization:0.883603
+I/O pads:
+Hard Modules:
+arbiter:		63542,39542		
+cpu:		0,0		
+crc32:		65736,0		rotated
+
+
+
+Soft Modules:
