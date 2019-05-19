@@ -10,8 +10,12 @@ The modules are still not integrated together.
 
 For router.cpp: 
 
-- The application now takes 4 files, the technology lef, a file containing the nets (see file test3.txt in folder "Deliverable 2/router testcases") , a file that containts the die width and length and the pins to be added as obstacles (see file test1.1 in folder "Deliverable 2/router testcases") and a file that contains the starting coordinates of the macros and their lengths and widths to be added as obstacles(see file .....)
-- The resulting section (nets section) of the DEF file is outputted in a file
+- The application now takes 4 files
+    1) The technology lef, 
+    2) a file containing the nets (see file "test6_nets.txt" in folder "Router Testcases") , 
+    3) a file that containts the die width and length and the pins to be added as obstacles (see file "test6_pins.txt" in folder "Router Testcases")  
+    4) and a file that contains the starting coordinates of the macros and their lengths and widths to be added as obstacles (see file "test6_macros.txt" in folder "Router Testcases") 
+- The resulting section (nets section) of the DEF file is outputted in a file (see file "out_test6.txt" in folder "Router Testcases") 
 - On the command line, details about the routes are reported. 
     1) "All net routed": Path was found for all pins in the net
     2) "Could not route the net": No route was found between source pin (first pin) and all target pins
