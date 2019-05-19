@@ -1,0 +1,78 @@
+nets 10 ;
+_1
+(ALU A)
+(IO1 IO1)
+ROUTED metal2 ( 699 1100 )  ( 0 * )  M2_M1
+NEW metal1 ( 0 1100 )  ( * 1200 )  ;
+_2
+(ALU B)
+(MUL A)
+ROUTED metal3 ( 1100 1500 )  ( * 2298 )  M3_M4
+NEW metal4 ( 1100 2298 )  ( 1050 * )  ;
+_3
+(IO2 IO2)
+(MUL B)
+(CU A)
+ROUTED metal2 ( 0 3500 )  ( 1000 * )  M2_M3
+NEW metal3 ( 1000 3500 )  ( * 2451 )  M3_M2
+NEW metal2 ( 1000 2451 ) 
+NEW metal3 ( 710 3999 )  ( * 3500 )  M3_M2
+NEW metal2 ( 710 3999 )  ( * 3500 )  ;
+_4
+(MULT A)
+(IO3 IO3)
+NEW metal1 ( 4470 799 )  ( * 0 )  ;
+_5
+(MULT B)
+(DIV A)
+ROUTED metal3 ( 4550 1101 )  ( * 1600 )  M3_M4
+NEW metal4 ( 4550 1600 )  ( 4999 * )  ;
+_6
+(MUL C)
+(DIV B)
+(REG A)
+ROUTED metal1 ( 1100 2400 )  ( * 2000 )  M1_M2
+NEW metal2 ( 1100 2000 )  ( 5400 * )  M2_M3
+NEW metal3 ( 5400 2000 ) 
+NEW metal4 ( 5400 2698 )  ( 5399 * )  M4_M3
+NEW metal3 ( 5399 2698 )  ( * 2000 )  M3_M2
+NEW metal2 ( 5399 2000 )  ;
+_7
+(REG B)
+(MEM A)
+ROUTED metal3 ( 4799 2800 )  ( * 3499 )  M3_M2
+NEW metal2 ( 4799 3499 )  ( 4700 * )  ;
+_8
+(MEM B)
+(CU C)
+(CU D)
+ROUTED metal3 ( 4499 4500 )  ( * 4700 )  M3_M4
+NEW metal4 ( 4499 4700 )  ( 1700 * )  M4_M3
+NEW metal3 ( 1700 4700 ) 
+NEW metal2 ( 1700 4000 )  ( 1701 * )  M2_M3
+NEW metal3 ( 1701 4000 )  ( * 4700 )  M3_M4
+NEW metal4 ( 1701 4700 )  ;
+_9
+(IO5 IO5)
+(REG C)
+(MEM C)
+ROUTED metal4 ( 6999 3200 )  ( 6901 * )  M4_M3
+NEW metal3 ( 6901 3200 )  ( * 2900 )  M3_M2
+NEW metal2 ( 6901 2900 )  ( 5800 * ) 
+NEW metal3 ( 5900 4000 )  ( * 3201 )  M3_M4
+NEW metal4 ( 5900 3200 )  ( 6899 * )  M4_M3
+NEW metal3 ( 6899 3200 )  ( * 3201 )  M3_M2
+NEW metal2 ( 6899 3201 )  ( 6901 * )  M2_M4
+NEW metal4 M4_M3
+NEW metal3 ( 6901 3200 )  ;
+_10
+(IO6 IO6)
+(ALU C)
+(MULT C)
+ROUTED metal1 ( 1100 0 )  ( * 99 )  M1_M2
+NEW metal2 ( 1100 99 )  ( 1900 * )  M2_M3
+NEW metal3 ( 1900 99 )  ( * 1000 )  M3_M2
+NEW metal2 ( 1900 1000 ) 
+NEW metal3 ( 4199 950 )  ( * 949 )  M3_M4
+NEW metal4 ( 4199 948 )  ( 1900 * )  M4_M3
+NEW metal3 ( 4199 948 )  ( 1900 * )  ;

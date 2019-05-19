@@ -1,0 +1,27 @@
+nets 2 ;
+_1
+(1 1)
+(2 2)
+(3 3)
+(4 4)
+(5 5)
+(6 6)
+ROUTED metal2 ( 2 0 )  ( 4 * )  M2_M3
+NEW metal3 ( 4 0 )  ( * 5 ) 
+NEW metal3 ( 2 1 )  ( * 0 )  M3_M2
+NEW metal2 ( 2 0 ) 
+NEW metal4 ( 3 2 )  ( 2 * )  M4_M3
+NEW metal3 ( 2 2 )  ( * 1 ) 
+NEW metal2 ( 2 3 ) 
+NEW metal4 ( 2 3 ) 
+NEW metal4 ( 5 6 )  ( 4 * )  M4_M3
+NEW metal3 ( 4 6 )  ( * 5 )  ;
+_2
+(1 7)
+(2 8)
+(3 9)
+ROUTED metal2 ( 2 1 )  ( 3 * )  M2_M3
+NEW metal3 ( 3 1 )  ( * 4 )  M3_M4
+NEW metal4 ( 3 4 ) 
+NEW metal3 ( 0 3 )  ( * 4 )  M3_M4
+NEW metal4 ( 0 4 )  ( 3 * )  ;

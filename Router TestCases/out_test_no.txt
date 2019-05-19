@@ -1,0 +1,10 @@
+nets 2 ;
+_1
+(a b)
+(c d)
+(e f)
+ROUTED metal1 ( 0 0 )  ( * 1 )  M1_M2
+NEW metal2 ( 0 1 )  ;
+_2
+(g h)
+(i j)

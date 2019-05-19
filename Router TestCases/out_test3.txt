@@ -1,0 +1,72 @@
+nets 13 ;
+_1
+(IO1 IO1)
+(MULT A)
+ROUTED metal2 ( 5 5 )  ( 6 * )  M2_M3
+NEW metal3 ( 6 5 )  ( * 21 )  ;
+_2
+(IO2 IO2)
+(MULT B)
+ROUTED metal3 ( 5 100 )  ( * 50 )  M3_M4
+NEW metal4 ( 5 50 )  ( 7 * )  ;
+_3
+(MULT C)
+(IO3 IO3)
+ROUTED metal2 ( 100 5 )  ( 99 * )  M2_M3
+NEW metal3 ( 99 5 )  ( * 19 )  M3_M2
+NEW metal2 ( 100 19 )  ;
+_4
+(IO4 IO4)
+(ALU A)
+_5
+(IO4 IO4)
+(ALU A)
+(IO5 IO5)
+(ALU B)
+ROUTED metal2 ( 300 20 )  ( 280 * )  M2_M1
+NEW metal1 ( 280 20 )  ;
+_6
+(ALU C)
+(IO6 IO6)
+ROUTED metal3 ( 280 100 )  ( * 80 )  M3_M4
+NEW metal4 ( 280 80 )  ( 300 * )  ;
+_7
+(IO7 IO7)
+(MEM B)
+ROUTED metal1 ( 100 300 )  ( * 220 )  M1_M2
+NEW metal2 ( 100 220 )  ( 120 * )  M2_M3
+NEW metal3 ( 120 220 )  ;
+_8
+(IO8 IO8)
+(MEM A)
+ROUTED metal3 ( 200 300 )  ( * 220 )  M3_M4
+NEW metal4 ( 200 220 )  ( 190 * )  ;
+_9
+(IO8 IO9)
+(MEM C)
+ROUTED metal2 ( 5 220 )  ( 99 * )  M2_M3
+NEW metal3 ( 99 220 )  ( * 221 )  M3_M2
+NEW metal2 ( 99 221 )  ( 119 * )  M2_M1
+NEW metal1 ( 119 200 )  ( * 220 )  M1_M2 ;
+_10
+(MULT D)
+(ALU C)
+ROUTED metal2 ( 219 30 )  ( 108 * )  M2_M1
+NEW metal1 ( 108 30 )  ;
+_11
+(MULT D)
+(ALU D)
+ROUTED metal2 ( 100 90 )  ( 120 * )  M2_M3
+NEW metal3 ( 120 90 )  ( * 178 )  M3_M4
+NEW metal4 ( 120 178 )  ;
+_12
+(MEM E)
+(ALU E)
+ROUTED metal1 ( 180 179 )  ( * 80 )  M1_M2
+NEW metal2 ( 180 80 )  ( 219 * )  M2_M3
+NEW metal3 ( 219 80 )  ;
+_13
+(ALU F)
+(MEM E)
+ROUTED metal3 ( 260 220 )  ( * 200 )  M3_M4
+NEW metal4 ( 260 200 )  ( 221 * )  ;

@@ -1,0 +1,55 @@
+nets 7 ;
+_1
+(MEM A)
+(ALU A)
+(IO1 IO1)
+ROUTED metal1 ( 3000 4999 )  ( * 4000 )  M1_M2
+NEW metal2 ( 3000 4000 )  ( 6999 * ) 
+NEW metal4 ( 0 3000 )  ( 3000 * )  M4_M3
+NEW metal3 ( 3000 3000 )  ( * 4000 )  M3_M2
+NEW metal2 ( 3000 3000 )  ( * 4000 )  ;
+_2
+(MEM B)
+(DIV A)
+(IO2 IO2)
+ROUTED metal1 ( 3000 10000 )  ( * 16000 )  M1_M2
+NEW metal2 ( 3000 16000 )  ( 6999 * ) 
+NEW metal3 ( 3000 19999 )  ( * 16000 )  M3_M2
+NEW metal2 ( 3000 19999 )  ( * 16000 )  ;
+_3
+(DIV B)
+(REG A)
+(IO3 IO3)
+ROUTED metal2 ( 10000 15000 )  ( 12500 * )  M2_M1
+NEW metal1 ( 12500 15000 )  ( * 8000 ) 
+NEW metal3 ( 14999 15000 )  ( * 14999 )  M3_M2
+NEW metal2 ( 14999 14999 )  ( 12500 * )  M2_M1
+NEW metal1 ( 12500 14999 )  ;
+_4
+(REG B)
+(ALU B)
+(IO4 IO4)
+ROUTED metal1 ( 12500 6999 )  ( * 4000 )  M1_M2
+NEW metal2 ( 12500 4000 )  ( 10000 * ) 
+NEW metal4 ( 14999 4000 )  ( 12500 * )  M4_M3
+NEW metal2 ( 12500 4000 )  ;
+_5
+(IO5 IO5)
+(ALU C)
+ROUTED metal1 ( 8000 2999 )  M1_M2
+NEW metal2 ( 8000 2999 )  M2_M3
+NEW metal3 ( 8000 0 )  ( * 2999 )  M3_M2 ;
+_6
+(REG C)
+(IO6 IO6)
+NEW metal2 ( 13000 7500 )  ( 14999 * )  ;
+_7
+(MEM C)
+(DIV C)
+(REG D)
+(ALU D)
+ROUTED metal2 ( 5000 7500 )  ( 8000 * )  M2_M1
+NEW metal1 ( 8000 7500 )  ( * 9999 ) 
+NEW metal2 ( 11999 7300 )  ( 8000 * )  M2_M1
+NEW metal1 ( 8000 7300 )  ( * 7500 ) 
+NEW metal1 ( 8000 5000 )  ( * 7300 )  ;
