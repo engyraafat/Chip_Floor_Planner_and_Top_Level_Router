@@ -72,8 +72,7 @@ int main(){
 //    string inputFile2 = "test4_pins.txt";
 //    string inputFile3 = "test4_macros.txt";
 //    string outputFile = "out_test4.txt";
-    
-    //RUN OVER NIGHT
+
 //    string inputFile1 = "test5_nets.txt";
 //    string inputFile2 = "test5_pins.txt";
 //    string inputFile3 = "test5_macros.txt";
@@ -83,8 +82,6 @@ int main(){
     string inputFile2 = "test6_pins.txt";
     string inputFile3 = "test6_macros.txt";
     string outputFile = "out_test6.txt";
-
-    //END
 
 //    string inputFile1 = "test_no_nets.txt";
 //    string inputFile2 = "test_no_pins.txt";
