@@ -23,6 +23,12 @@ FloorPlanner.cpp:
 - It outputs the following:
 A grid for the Router
 File with module locations, module sizes, pin data ( name , metal layer , normalized location) for pin assignment
+
+format:
+module name         width       height      x-coordinate    y-coordinate
+pins:
+name        metal_layer     xcor        ycor
+
 Final DEF file components without the NETS section which is an output of the router 
 
 Pin Assignment:
