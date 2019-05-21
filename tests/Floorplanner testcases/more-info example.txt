@@ -1,0 +1,23 @@
+W:81
+H:61
+Total Area:4819
+Final Utilization:0.456526
+I/O pads:
+0 , 3
+0 , 6
+3 , 0
+6 , 0
+79 , 3
+79 , 6
+3 , 59
+6 , 59
+Hard Modules:
+A:		22,1		rotated
+b:		9,1		rotated
+c:		27,27		rotated
+D:		27,14		rotated
+
+
+
+
+Soft Modules:

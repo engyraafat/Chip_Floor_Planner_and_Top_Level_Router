@@ -1,0 +1,31 @@
+DIEAREA(0 0) ( 84 64 ) ;
+Components 4 ;
+A_1 A + PLACED ( 23 2 ) N ;
+b_1 b + PLACED ( 10 2 ) N ;
+c_1 c + PLACED ( 28 28 ) N ;
+D_1 D + PLACED ( 28 15 ) N ;
+PINS  8 ;
+- pin0 + NET - pin0
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 0 3 ) N ;
+- pin1 + NET - pin1
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 0 6 ) N ;
+- pin2 + NET - pin2
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 3 0 ) N ;
+- pin3 + NET - pin3
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 6 0 ) N ;
+- pin4 + NET - pin4
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 84 3 ) N ;
+- pin5 + NET - pin5
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 84 6 ) N ;
+- pin6 + NET - pin6
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 3 64 ) N ;
+- pin7 + NET - pin7
+ + LAYER metal1 ( 0 0 ) ( 0 0 )
+  + PLACED ( 6 64 ) N ;

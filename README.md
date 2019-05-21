@@ -10,6 +10,7 @@ The project is composed of 3 programs. They should be run sequentially after the
     1) FloorPlanner.cpp
     2) PinAssignment.cpp
     3) router.cpp
+The output files of one program serves as the input of the next one
 
 FloorPlanner.cpp:
 -  It takes the input as a directory of def files for the hard macros

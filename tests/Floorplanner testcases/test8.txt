@@ -1,0 +1,12 @@
+.hard_module Z 20 20
+.hard_module Y 40 30
+.hard_module Y 50 30
+.soft_module A 100
+.soft_module B 200
+.soft_module C 500
+.soft_module D 400
+.soft_module E 120
+.soft_module F 600
+
+
+.pins 30 2 2
