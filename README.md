@@ -26,16 +26,16 @@ File with module locations, module sizes, pin data ( name , metal layer , normal
 Final DEF file components without the NETS section which is an output of the router 
 
 Pin Assignment:
-    - Inputs:
-        - the first file is obtained from the hardmacros output from the floor planner. It contains the names of the hardmacros, their coordinates, their pins and their locations.
-        - the second file is a file that contains the soft macros and the pins and the macros they are connected to. these informaion should be retrieved from parsing the gatelevel netlist.
-    - outputs:
-        - the program outputs two files. one file contains the pins on every macro
-        - the other file contains the coordinates of each macro 
-        - these two files will be used by the router
-    - Assumptions:
-        - one assumption is that there will always be hard macros
-        - the number of pins connected to a macro will fit on its surface
+- Inputs:
++ the first file is obtained from the hardmacros output from the floor planner. It contains the names of the hardmacros, their coordinates, their pins and their locations.
++ the second file is a file that contains the soft macros and the pins and the macros they are connected to. these informaion should be retrieved from parsing the gatelevel netlist.
+- outputs:
++ the program outputs two files. one file contains the pins on every macro
++ the other file contains the coordinates of each macro 
++ these two files will be used by the router
+- Assumptions:
++ one assumption is that there will always be hard macros
++ the number of pins connected to a macro will fit on its surface
 
 For router.cpp: 
 - The application now takes 4 files
