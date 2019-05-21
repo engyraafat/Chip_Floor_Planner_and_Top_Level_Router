@@ -16,6 +16,10 @@ FloorPlanner.cpp:
 -  It takes the input as a directory of def files for the hard macros
 -  The soft Macros are entered through a specified file that contains their names and data
 -  Through this stages, DEF files are parsed then Linear equations are created and solved for both soft and hard macros 
+-  The optimization is according to:
+        - total area 
+        - modules to modules connections
+        - modules to I/Os connections
 - It outputs the following:
 A grid for the Router
 File with module locations, module sizes, pin data ( name , metal layer , normalized location) for pin assignment
