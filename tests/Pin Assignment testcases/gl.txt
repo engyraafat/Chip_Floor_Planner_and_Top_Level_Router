@@ -1,0 +1,8 @@
+crc32_1 2 1 2 2
+pins:
+name: vdd to: cpu_1
+name: clk to cpu_1
+;
+cpu_1 15 5 4 2
+name: vdd to: crc32_1
+;

@@ -1,0 +1,6 @@
+cpu 7 3 4 4
+pins:
+name: vdd metal: metal4 x: 6 y: 4 to: crc32_1
+name: gnd metal: metal4 x: 6 y: 5 to: crc32_1
+name: clk metal: metal2 x: 10 y: 8 to: crc32_1
+;
